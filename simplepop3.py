@@ -5,13 +5,30 @@ import threading
 import logging
 import sys
 import glob
+import errno
 
 OK = u'+OK'
 ERR = u'-ERR'
 
+logdir = u'/var/log/simplepop3'
+
+
+def mkdir_p(path):
+    """http://stackoverflow.com/a/600612/190597 (tzot)"""
+    try:
+        os.makedirs(path, exist_ok=True)  # Python>3.2
+    except TypeError:
+        try:
+            os.makedirs(path)
+        except OSError as exc: # Python >2.5
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else: raise
+
+mkdir_p(os.path.dirname(logdir))
 logger = logging.getLogger('POP3Server')
 logger.addHandler(logging.StreamHandler(sys.stderr))
-logger.addHandler(logging.FileHandler('/var/log/simplepop3.log'))
+logger.addHandler(logging.FileHandler('/var/log/simplepop3/simplepop3.log'))
 for h in logger.handlers:
     h.setFormatter(logging.Formatter(fmt='%(asctime)s [%(name)s.%(levelname)s %(lineno)d]: %(message)s'))
 logger.setLevel(logging.DEBUG)
@@ -94,19 +111,19 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
             msg_idx = []
             for n, m in enumerate(self.messages):
                 n += 1
-                msg_idx.append(u'%s %s' % (n, len(m)))
+                msg_idx.append(u'%s %s' % (n, m.size))
             return u'%s %s (%s octets)\r\n%s\r\n.' % (OK, len(self.messages), self.__get_messagesize__(), '\r\n'.join(msg_idx))
 
-    def retr(self, msg=None):
+    def retr(self, msg_idx=None):
         """retr command returns a complete specific message"""
         if self.state not in (u'transaction',):
             return u'%s POP3 invalid state for command %s' % (ERR, u'RETR')
         try:
-            content = self.__get_msg__(msg)
+            message = self.__get_msg__(msg_idx)
         except IndexError:
             return u'%s no such message, only %s messages found' % (ERR, len(self.messages))
         return u'%s %s octets\r\n%s\r\n.' % (
-        OK, len(content), unicode(content.as_string(), 'utf8').encode('ascii', 'ignore'))
+        OK, len(message.size), unicode(message.as_string(), 'utf8').encode('ascii', 'ignore'))
 
     def noop(self):
         """noop command for idle connections to avoid tcp timeouts on firewalls or similar"""
@@ -126,6 +143,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
         if credentials is None:
             return u'%s invalid password' % ERR
         logger.debug(u'trying to login for %s' % self._pop3user)
+        self.state = u'transaction'
         return u'%s' % OK
 
     def __get_msg__(self, num=None):
@@ -144,7 +162,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
                 cmd = cmd.lower()
             except ValueError:
                 try:
-                    cmd = self.data.split()[0].upper()
+                    cmd = self.data.split()[0].lower()
                 except IndexError:
                     cmd = 'quit'
                 cmd_options = False
