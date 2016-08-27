@@ -136,7 +136,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
         self._pop3user = name
         return u'%s' % OK
 
-    def password(self, credentials=None):
+    def _pass(self, credentials=None):
         """pass command sets the password credentials part"""
         if self.state not in (u'authorization',):
             return u'%s POP3 invalid state for command %s' % (ERR, u'PASS')
@@ -160,6 +160,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
             try:
                 cmd, cmd_options = self.data.split(None, 1)
                 cmd = cmd.lower()
+                if cmd == 'pass': cmd = '_pass'
             except ValueError:
                 try:
                     cmd = self.data.split()[0].lower()
