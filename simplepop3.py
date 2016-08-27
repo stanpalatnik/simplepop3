@@ -125,6 +125,11 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
         return u'%s %s octets\r\n%s\r\n.' % (
         OK, len(message), unicode(message.as_string(), 'utf8').encode('ascii', 'ignore'))
 
+    def dele(self, msg_idx=None):
+        if self.state not in (u'transaction',):
+            return u'%s POP3 invalid state for command %s' % (ERR, u'DELE')
+        return u'%s message %s deleted' % (OK, msg_idx)
+
     def noop(self):
         """noop command for idle connections to avoid tcp timeouts on firewalls or similar"""
         return u'%s' % OK
