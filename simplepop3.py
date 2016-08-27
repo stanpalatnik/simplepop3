@@ -38,6 +38,7 @@ class Message(object):
     def __init__(self, filename):
         msg = open(filename, "r")
         try:
+            self.filename = filename
             self.data = data = msg.read()
             self.size = len(data)
             self.headers, bot = data.split("\r\n\r\n", 1)
@@ -52,6 +53,8 @@ class Message(object):
         """return the complete message"""
         return self.data
 
+    def delete(self):
+        os.remove(self.filename)
 
 def load_messages(path):
     return map(to_message, glob.glob(os.path.join(path, '*.eml')))
@@ -128,6 +131,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
     def dele(self, msg_idx=None):
         if self.state not in (u'transaction',):
             return u'%s POP3 invalid state for command %s' % (ERR, u'DELE')
+        self.messages[msg_idx].delete()
         return u'%s message %s deleted' % (OK, msg_idx)
 
     def noop(self):
