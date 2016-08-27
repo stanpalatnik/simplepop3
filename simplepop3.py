@@ -46,7 +46,7 @@ class Message(object):
             msg.close()
 
     def __len__(self):
-        return len(self.data)
+        return self.size
 
     def as_string(self):
         """return the complete message"""
@@ -58,7 +58,7 @@ def load_messages(path):
 
 
 def to_message(filename):
-    Message(filename)
+    return Message(filename)
 
 
 class POP3ServerProtocol(SocketServer.BaseRequestHandler):
@@ -123,7 +123,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
         except IndexError:
             return u'%s no such message, only %s messages found' % (ERR, len(self.messages))
         return u'%s %s octets\r\n%s\r\n.' % (
-        OK, len(message.size), unicode(message.as_string(), 'utf8').encode('ascii', 'ignore'))
+        OK, len(message), unicode(message.as_string(), 'utf8').encode('ascii', 'ignore'))
 
     def noop(self):
         """noop command for idle connections to avoid tcp timeouts on firewalls or similar"""
@@ -197,13 +197,13 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 
 
-def main(options):
+def main(args):
     try:
-        logger.debug(u'using ThreadedTCPServer(%s:%s)' % (options.listen, options.port))
-        server = ThreadedTCPServer((options.listen, options.port), POP3ServerProtocol)
+        logger.debug(u'using ThreadedTCPServer(%s:%s)' % (args.listen, args.port))
+        server = ThreadedTCPServer((args.listen, args.port), POP3ServerProtocol)
     except IndexError:
-        server = ThreadedTCPServer((options.listen, options.port), POP3ServerProtocol)
-    server.message_path = options.path
+        server = ThreadedTCPServer((args.listen, args.port), POP3ServerProtocol)
+    server.message_path = args.path
     logger.info(u'serving POP3 service at %s:%s' % server.server_address)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
