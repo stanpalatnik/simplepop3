@@ -1,5 +1,5 @@
 # simplepop3
-Post Office Protocl 3 compliant Python Server
+Post Office Protocol 3 compliant Python Server
 
 Serves a static list of .eml files from a given directory. 
 
