@@ -131,7 +131,7 @@ class POP3ServerProtocol(SocketServer.BaseRequestHandler):
     def dele(self, msg_idx=None):
         if self.state not in (u'transaction',):
             return u'%s POP3 invalid state for command %s' % (ERR, u'DELE')
-        self.messages[msg_idx].delete()
+        self.__get_msg__(msg_idx).delete()
         return u'%s message %s deleted' % (OK, msg_idx)
 
     def noop(self):
@@ -212,6 +212,7 @@ def main(args):
         logger.debug(u'using ThreadedTCPServer(%s:%s)' % (args.listen, args.port))
         server = ThreadedTCPServer((args.listen, args.port), POP3ServerProtocol)
     except IndexError:
+        logger.debug(u'Error trying to start server, trying again..')
         server = ThreadedTCPServer((args.listen, args.port), POP3ServerProtocol)
     server.message_path = args.path
     logger.info(u'serving POP3 service at %s:%s' % server.server_address)
