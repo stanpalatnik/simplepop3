@@ -227,7 +227,7 @@ if __name__ == '__main__':
     parser.add_option('-p', '--port', action='store', type=int, default=110)
     parser.add_option('-d', '--debug', action='store_true', default=False)
     parser.add_option('-m', '--path', action='store', default='.')
-    parser.add_option('--daemon', action='store_true', default=True)
+    parser.add_option('--daemon', action='store_true', default=False)
 
     options, remainings = parser.parse_args()
     if options.debug:
